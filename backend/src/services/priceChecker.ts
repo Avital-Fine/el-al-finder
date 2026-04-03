@@ -76,7 +76,11 @@ async function checkAlert(alert: Alert): Promise<void> {
     pairs.push(...generateDatePairs(new Date(alert.window_start), new Date(alert.window_end), d));
   }
 
-  let bestResult: { departure: string; return: string; price: number; offerId: string } | null = null;
+  let bestResult: {
+    departure: string; return: string; price: number; offerId: string;
+    outboundDepartingAt: string; outboundArrivingAt: string;
+    inboundDepartingAt: string; inboundArrivingAt: string;
+  } | null = null;
 
   for (const pair of pairs) {
     try {
@@ -93,6 +97,10 @@ async function checkAlert(alert: Alert): Promise<void> {
           return: result.returnDate,
           price: result.priceUsd,
           offerId: result.offerId,
+          outboundDepartingAt: result.outboundDepartingAt,
+          outboundArrivingAt: result.outboundArrivingAt,
+          inboundDepartingAt: result.inboundDepartingAt,
+          inboundArrivingAt: result.inboundArrivingAt,
         };
       }
     } catch (err) {
@@ -110,9 +118,11 @@ async function checkAlert(alert: Alert): Promise<void> {
 
   // Persist price history
   await pool.query(
-    `INSERT INTO price_history (alert_id, departure_date, return_date, price_usd, offer_id)
-     VALUES ($1, $2, $3, $4, $5)`,
-    [alert.id, bestResult.departure, bestResult.return, bestResult.price, bestResult.offerId],
+    `INSERT INTO price_history (alert_id, departure_date, return_date, price_usd, offer_id, outbound_departing_at, outbound_arriving_at, inbound_departing_at, inbound_arriving_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+    [alert.id, bestResult.departure, bestResult.return, bestResult.price, bestResult.offerId,
+     bestResult.outboundDepartingAt, bestResult.outboundArrivingAt,
+     bestResult.inboundDepartingAt, bestResult.inboundArrivingAt],
   );
 
   console.log(`[checker] Alert ${alert.id}: best price $${bestResult.price} (threshold $${alert.max_price_usd})`);

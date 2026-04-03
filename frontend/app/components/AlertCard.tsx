@@ -23,6 +23,43 @@ interface PriceRecord {
   departure_date: string;
   return_date: string;
   price_usd: string;
+  outbound_departing_at: string | null;
+  outbound_arriving_at: string | null;
+  inbound_departing_at: string | null;
+  inbound_arriving_at: string | null;
+}
+
+function fmt(iso: string | null, fallback: string, type: "date" | "time") {
+  const d = iso ? new Date(iso) : new Date(fallback + "T00:00:00");
+  if (type === "date") return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+  return iso ? d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) : null;
+}
+
+function FlightLeg({ label, origin, destination, departingAt, arrivingAt, fallbackDate }: {
+  label: string;
+  origin: string;
+  destination: string;
+  departingAt: string | null;
+  arrivingAt: string | null;
+  fallbackDate: string;
+}) {
+  const date = fmt(departingAt, fallbackDate, "date");
+  const depTime = fmt(departingAt, fallbackDate, "time");
+  const arrTime = fmt(arrivingAt, fallbackDate, "time");
+
+  return (
+    <div className="flex items-center justify-between text-sm">
+      <span className="text-xs text-gray-400 w-14">{label}</span>
+      <div className="flex items-center gap-1 text-gray-700 font-medium">
+        <span>{origin}</span>
+        {depTime && <span className="text-xs text-gray-400 font-normal">{depTime}</span>}
+        <span className="text-gray-300">→</span>
+        <span>{destination}</span>
+        {arrTime && <span className="text-xs text-gray-400 font-normal">{arrTime}</span>}
+      </div>
+      <span className="text-xs text-gray-400">{date}</span>
+    </div>
+  );
 }
 
 export default function AlertCard({
@@ -121,7 +158,7 @@ export default function AlertCard({
             )}
           </div>
           <p className="text-sm text-gray-500">
-            {windowStart} – {windowEnd} · {currentAlert.trip_duration_days} days
+            {windowStart} – {windowEnd} · {currentAlert.trip_duration_days} days{currentAlert.flexible_duration && " (flexible)"}
           </p>
         </div>
 
@@ -216,24 +253,38 @@ export default function AlertCard({
         </div>
       )}
 
-      {/* Stats row */}
+      {/* Stats + flight details */}
       {prices.length > 0 && (
-        <div className="grid grid-cols-3 divide-x divide-gray-100 border-t border-gray-100 text-center text-sm">
-          <div className="py-3">
-            <p className="text-xs text-gray-400 mb-0.5">Lowest found</p>
-            <p className="font-semibold text-gray-700">${lowestPrice?.toFixed(0)}</p>
+        <>
+          <div className="grid grid-cols-2 divide-x divide-gray-100 border-t border-gray-100 text-center text-sm">
+            <div className="py-3">
+              <p className="text-xs text-gray-400 mb-0.5">Lowest found</p>
+              <p className="font-semibold text-gray-700">${lowestPrice?.toFixed(0)}</p>
+            </div>
+            <div className="py-3">
+              <p className="text-xs text-gray-400 mb-0.5">Checks done</p>
+              <p className="font-semibold text-gray-700">{prices.length}</p>
+            </div>
           </div>
-          <div className="py-3">
-            <p className="text-xs text-gray-400 mb-0.5">Best departure</p>
-            <p className="font-semibold text-gray-700">
-              {new Date(prices[0].departure_date).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
-            </p>
+          <div className="border-t border-gray-100 px-6 py-3 space-y-2">
+            <FlightLeg
+              label="Outbound"
+              origin={currentAlert.origin}
+              destination={currentAlert.destination}
+              departingAt={prices[0].outbound_departing_at}
+              arrivingAt={prices[0].outbound_arriving_at}
+              fallbackDate={prices[0].departure_date}
+            />
+            <FlightLeg
+              label="Return"
+              origin={currentAlert.destination}
+              destination={currentAlert.origin}
+              departingAt={prices[0].inbound_departing_at}
+              arrivingAt={prices[0].inbound_arriving_at}
+              fallbackDate={prices[0].return_date}
+            />
           </div>
-          <div className="py-3">
-            <p className="text-xs text-gray-400 mb-0.5">Checks done</p>
-            <p className="font-semibold text-gray-700">{prices.length}</p>
-          </div>
-        </div>
+        </>
       )}
 
       {/* Chart */}

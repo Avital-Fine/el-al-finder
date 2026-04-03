@@ -23,6 +23,10 @@ interface PriceRecord {
   departure_date: string;
   return_date: string;
   price_usd: string;
+  outbound_departing_at: string | null;
+  outbound_arriving_at: string | null;
+  inbound_departing_at: string | null;
+  inbound_arriving_at: string | null;
 }
 
 async function getAlerts(email: string): Promise<Alert[]> {

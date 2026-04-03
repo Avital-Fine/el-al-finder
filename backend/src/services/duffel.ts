@@ -9,9 +9,13 @@ const AIRLINE_IATA = process.env.AIRLINE_IATA ?? null;
 
 export interface FlightResult {
   offerId: string;
-  departureDate: string; // YYYY-MM-DD
-  returnDate: string;    // YYYY-MM-DD
+  departureDate: string;       // YYYY-MM-DD
+  returnDate: string;          // YYYY-MM-DD
   priceUsd: number;
+  outboundDepartingAt: string; // ISO 8601
+  outboundArrivingAt: string;
+  inboundDepartingAt: string;
+  inboundArrivingAt: string;
 }
 
 /**
@@ -69,10 +73,19 @@ export async function searchCheapestOffer(
     parseFloat(offer.total_amount) < parseFloat(min.total_amount) ? offer : min,
   );
 
+  const outboundSlice = cheapest.slices[0];
+  const inboundSlice = cheapest.slices[1];
+  const outboundSegs = outboundSlice.segments;
+  const inboundSegs = inboundSlice.segments;
+
   return {
     offerId: cheapest.id,
     departureDate,
     returnDate,
     priceUsd: parseFloat(cheapest.total_amount),
+    outboundDepartingAt: outboundSegs[0].departing_at,
+    outboundArrivingAt:  outboundSegs[outboundSegs.length - 1].arriving_at,
+    inboundDepartingAt:  inboundSegs[0].departing_at,
+    inboundArrivingAt:   inboundSegs[inboundSegs.length - 1].arriving_at,
   };
 }
