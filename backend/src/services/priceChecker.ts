@@ -10,6 +10,7 @@ interface Alert {
   window_start: Date;
   window_end: Date;
   trip_duration_days: number;
+  flexible_duration: boolean;
   max_price_usd: number;
   email: string;
 }
@@ -66,11 +67,14 @@ export async function checkAllAlerts(): Promise<void> {
 }
 
 async function checkAlert(alert: Alert): Promise<void> {
-  const pairs = generateDatePairs(
-    new Date(alert.window_start),
-    new Date(alert.window_end),
-    alert.trip_duration_days,
-  );
+  const maxDuration = alert.flexible_duration
+    ? alert.trip_duration_days + 3
+    : alert.trip_duration_days;
+
+  const pairs: Array<{ departure: string; return: string }> = [];
+  for (let d = alert.trip_duration_days; d <= maxDuration; d++) {
+    pairs.push(...generateDatePairs(new Date(alert.window_start), new Date(alert.window_end), d));
+  }
 
   let bestResult: { departure: string; return: string; price: number; offerId: string } | null = null;
 

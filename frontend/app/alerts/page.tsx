@@ -12,6 +12,7 @@ interface Alert {
   trip_duration_days: number;
   max_price_usd: string;
   is_active: boolean;
+  flexible_duration: boolean;
   created_at: string;
 }
 

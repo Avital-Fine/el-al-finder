@@ -42,6 +42,11 @@ async function migrate() {
     `);
 
     await client.query(`
+      ALTER TABLE alerts
+        ADD COLUMN IF NOT EXISTS flexible_duration BOOLEAN NOT NULL DEFAULT FALSE
+    `);
+
+    await client.query(`
       CREATE INDEX IF NOT EXISTS idx_price_history_alert_id ON price_history(alert_id);
       CREATE INDEX IF NOT EXISTS idx_alerts_user_id ON alerts(user_id);
       CREATE INDEX IF NOT EXISTS idx_alerts_active ON alerts(is_active) WHERE is_active = TRUE;
